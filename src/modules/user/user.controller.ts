@@ -23,8 +23,6 @@ export const updateProfile = async (req: Request, res: Response) => {
     user.firstName = req.body.firstName || user.firstName;
     user.lastName = req.body.lastName || user.lastName;
     user.phone = req.body.phone || user.phone;
-    
-    // In real app, handle profileImage upload
 
     if (req.body.password) {
       user.password = req.body.password;
@@ -40,6 +38,18 @@ export const updateProfile = async (req: Request, res: Response) => {
       role: updatedUser.role,
       phone: updatedUser.phone
     });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+export const getAgentById = async (req: Request, res: Response) => {
+  try {
+    const agent = await User.findOne({ _id: req.params.id, role: 'Agent' }).select('-password');
+    if (!agent) {
+      return res.status(404).json({ message: 'Agent not found' });
+    }
+    res.json(agent);
   } catch (error) {
     res.status(500).json({ message: 'Server Error' });
   }

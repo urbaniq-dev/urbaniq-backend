@@ -16,14 +16,29 @@ const PORT = process.env.PORT || 5000;
 
 // Middlewares
 app.use(express.json());
+<<<<<<< Updated upstream
 app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
+=======
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  credentials: true,
+}));
+app.use(cookieParser());
+app.use(helmet({ crossOriginResourcePolicy: false })); // allow images to load cross origin
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// Serve static files
+import path from 'path';
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+>>>>>>> Stashed changes
 
 import authRoutes from './modules/auth/auth.route';
 import userRoutes from './modules/user/user.route';
 import propertyRoutes from './modules/property/property.route';
 import interactionRoutes from './modules/interaction/interaction.route';
+import agentProfileRoutes from './modules/agentProfile/agentProfile.route';
 import { notFound, errorHandler } from './core/middlewares/error.middleware';
 
 // Basic Route
@@ -36,6 +51,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/interactions', interactionRoutes);
+app.use('/api/agent-profiles', agentProfileRoutes);
 
 // Error Handling Middlewares
 app.use(notFound);

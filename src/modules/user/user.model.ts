@@ -9,7 +9,6 @@ export interface IUser extends Document {
   role: 'Admin' | 'Owner' | 'Agent' | 'Buyer';
   googleId?: string;
   isVerified: boolean;
-  profileImage?: string;
   phone?: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -28,7 +27,6 @@ const UserSchema: Schema = new Schema(
     },
     googleId: { type: String },
     isVerified: { type: Boolean, default: false }, // Useful for agents
-    profileImage: { type: String },
     phone: { type: String },
   },
   { timestamps: true }

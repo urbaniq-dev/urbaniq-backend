@@ -8,7 +8,12 @@ export interface IProperty extends Document {
     address: string;
     city: string;
     state: string;
+    country: string;
     zipCode?: string;
+    coordinates: {
+      lat: number;
+      lng: number;
+    };
   };
   features: {
     bedrooms: number;
@@ -32,7 +37,12 @@ const PropertySchema: Schema = new Schema(
       address: { type: String, required: true },
       city: { type: String, required: true },
       state: { type: String, required: true },
+      country: { type: String, required: true },
       zipCode: { type: String },
+      coordinates: {
+        lat: { type: Number, required: true },
+        lng: { type: Number, required: true },
+      },
     },
     features: {
       bedrooms: { type: Number, required: true },

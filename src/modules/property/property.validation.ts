@@ -4,7 +4,12 @@ const locationSchema = Joi.object({
   address: Joi.string().required(),
   city: Joi.string().required(),
   state: Joi.string().required(),
+  country: Joi.string().required(),
   zipCode: Joi.string().optional().allow(''),
+  coordinates: Joi.object({
+    lat: Joi.number().required(),
+    lng: Joi.number().required(),
+  }).required(),
 });
 
 const featuresSchema = Joi.object({
@@ -20,9 +25,9 @@ export const createProperty = Joi.object({
   location: locationSchema.required(),
   features: featuresSchema.required(),
   amenities: Joi.array().items(Joi.string()).optional(),
-  images: Joi.array().items(Joi.string().uri()).optional(),
+  images: Joi.array().items(Joi.string()).optional(),
   status: Joi.string().valid('Available', 'Pending', 'Sold', 'Rented').default('Available'),
-  propertyType: Joi.string().valid('Villa', 'Apartment', 'Penthouse', 'Commercial', 'Townhouse').required(),
+  propertyType: Joi.string().valid('Villa', 'Apartment', 'Penthouse', 'Commercial', 'Townhouse', 'Land').required(),
 });
 
 export const updateProperty = Joi.object({
@@ -32,13 +37,13 @@ export const updateProperty = Joi.object({
   location: locationSchema,
   features: featuresSchema,
   amenities: Joi.array().items(Joi.string()),
-  images: Joi.array().items(Joi.string().uri()),
+  images: Joi.array().items(Joi.string()),
   status: Joi.string().valid('Available', 'Pending', 'Sold', 'Rented'),
-  propertyType: Joi.string().valid('Villa', 'Apartment', 'Penthouse', 'Commercial', 'Townhouse'),
+  propertyType: Joi.string().valid('Villa', 'Apartment', 'Penthouse', 'Commercial', 'Townhouse', 'Land'),
 }).min(1);
 
 export const getProperties = Joi.object({
-  type: Joi.string().valid('Villa', 'Apartment', 'Penthouse', 'Commercial', 'Townhouse'),
+  type: Joi.string().valid('Villa', 'Apartment', 'Penthouse', 'Commercial', 'Townhouse', 'Land'),
   city: Joi.string(),
   minPrice: Joi.number().positive(),
   maxPrice: Joi.number().positive(),
