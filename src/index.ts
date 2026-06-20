@@ -16,11 +16,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middlewares
 app.use(express.json());
-<<<<<<< Updated upstream
-app.use(cors());
-app.use(helmet());
-app.use(morgan('dev'));
-=======
+import cookieParser from 'cookie-parser';
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true,
@@ -32,7 +28,6 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 // Serve static files
 import path from 'path';
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
->>>>>>> Stashed changes
 
 import authRoutes from './modules/auth/auth.route';
 import userRoutes from './modules/user/user.route';

@@ -2,14 +2,12 @@ import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../user/user.model';
 
-const generateToken = (id: string) => {
+const generateAccessToken = (id: string) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret', {
-    expiresIn: '30d',
+    expiresIn: '15m',
   });
 };
 
-<<<<<<< Updated upstream
-=======
 const generateRefreshToken = (id: string) => {
   return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret', {
     expiresIn: '7d',
@@ -44,7 +42,6 @@ const sendTokenResponse = (user: any, statusCode: number, res: Response) => {
     });
 };
 
->>>>>>> Stashed changes
 export const registerUser = async (req: Request, res: Response) => {
   try {
     const { firstName, lastName, email, password, role } = req.body;
@@ -64,14 +61,7 @@ export const registerUser = async (req: Request, res: Response) => {
     });
 
     if (user) {
-      res.status(201).json({
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
-        token: generateToken(user._id.toString()),
-      });
+      sendTokenResponse(user, 201, res);
     } else {
       res.status(400).json({ message: 'Invalid user data' });
     }
@@ -88,14 +78,7 @@ export const loginUser = async (req: Request, res: Response) => {
     const user = await User.findOne({ email });
 
     if (user && (await user.comparePassword(password))) {
-      res.json({
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
-        token: generateToken(user._id.toString()),
-      });
+      sendTokenResponse(user, 200, res);
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
     }
@@ -105,8 +88,6 @@ export const loginUser = async (req: Request, res: Response) => {
   }
 };
 
-<<<<<<< Updated upstream
-=======
 export const getMe = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
@@ -168,7 +149,6 @@ export const logout = async (req: Request, res: Response) => {
   res.json({ message: 'Logged out successfully' });
 };
 
->>>>>>> Stashed changes
 // Google OAuth stub
 export const googleAuth = async (req: Request, res: Response) => {
   // To be implemented using google-auth-library

@@ -1,9 +1,5 @@
 import { Router } from 'express';
-<<<<<<< Updated upstream
-import { registerUser, loginUser, googleAuth } from './auth.controller';
-=======
 import { registerUser, loginUser, googleAuth, refreshToken, logout, getMe } from './auth.controller';
->>>>>>> Stashed changes
 
 import { validate } from '../../core/middlewares/validate.middleware';
 import { protect } from '../../core/middlewares/auth.middleware';
