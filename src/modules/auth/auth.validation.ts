@@ -33,3 +33,12 @@ export const logoutSchema = Joi.object({
   refreshToken: Joi.string().required(),
 });
 
+export const googleAuthSchema = Joi.object({
+  idToken: Joi.string().required(),
+});
+
+export const googleRegisterSchema = Joi.object({
+  idToken: Joi.string().required(),
+  role: Joi.string().valid('Admin', 'Owner', 'Agent', 'Buyer').required(),
+});
+

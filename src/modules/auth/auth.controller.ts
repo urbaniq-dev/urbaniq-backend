@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { OAuth2Client } from 'google-auth-library';
 import User from '../user/user.model';
 import { redisClient } from '../../config/redis';
 import { generateOTP, storeOTP, verifyOTPCode } from './services/otp.service';
@@ -76,10 +77,122 @@ export const loginUser = async (req: Request, res: Response) => {
   }
 };
 
-// Google OAuth stub
 export const googleAuth = async (req: Request, res: Response) => {
-  // To be implemented using google-auth-library
-  res.status(501).json({ message: 'Google OAuth not implemented yet' });
+  try {
+    const { idToken } = req.body;
+    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+    if (!GOOGLE_CLIENT_ID) {
+      return res.status(500).json({ message: 'Google Client ID is not configured on the server' });
+    }
+
+    const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return res.status(400).json({ message: 'Invalid ID token payload' });
+    }
+
+    const email = payload.email.toLowerCase().trim();
+    let user = await User.findOne({ email });
+
+    if (user) {
+      // User exists - link googleId if missing
+      if (!user.googleId) {
+        user.googleId = payload.sub;
+        await user.save();
+      }
+
+      const accessToken = generateAccessToken(user._id.toString());
+      const refreshToken = await generateRefreshToken(user._id.toString());
+
+      return res.json({
+        isNewUser: false,
+        user: {
+          _id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,
+          isVerified: user.isVerified,
+        },
+        token: accessToken,
+        accessToken,
+        refreshToken,
+      });
+    }
+
+    // User does not exist - notify frontend that role selection is required
+    return res.json({
+      isNewUser: true,
+      email,
+      firstName: payload.given_name || '',
+      lastName: payload.family_name || '',
+      googleId: payload.sub,
+    });
+  } catch (error: any) {
+    console.error('Google Auth error:', error);
+    res.status(400).json({ message: 'Google authentication failed: ' + error.message });
+  }
+};
+
+export const googleRegister = async (req: Request, res: Response) => {
+  try {
+    const { idToken, role } = req.body;
+    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+    if (!GOOGLE_CLIENT_ID) {
+      return res.status(500).json({ message: 'Google Client ID is not configured on the server' });
+    }
+
+    const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return res.status(400).json({ message: 'Invalid ID token payload' });
+    }
+
+    const email = payload.email.toLowerCase().trim();
+    let user = await User.findOne({ email });
+
+    if (user) {
+      return res.status(400).json({ message: 'Account already exists for this email. Please sign in instead.' });
+    }
+
+    // Create user (Google accounts are automatically email-verified!)
+    user = await User.create({
+      firstName: payload.given_name || 'Google',
+      lastName: payload.family_name || 'User',
+      email,
+      googleId: payload.sub,
+      isVerified: true,
+      role,
+    });
+
+    const accessToken = generateAccessToken(user._id.toString());
+    const refreshToken = await generateRefreshToken(user._id.toString());
+
+    res.status(201).json({
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      isVerified: user.isVerified,
+      token: accessToken,
+      accessToken,
+      refreshToken,
+    });
+  } catch (error: any) {
+    console.error('Google Register error:', error);
+    res.status(400).json({ message: 'Google registration failed: ' + error.message });
+  }
 };
 
 // Send OTP via Email using Redis store
