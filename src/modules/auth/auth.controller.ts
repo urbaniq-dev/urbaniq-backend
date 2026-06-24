@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import User from '../user/user.model';
+import { redisClient } from '../../config/redis';
 import { generateOTP, storeOTP, verifyOTPCode } from './services/otp.service';
 import { sendOTPEmail } from './services/email.service';
 import {
@@ -12,43 +13,34 @@ import {
 export const registerUser = async (req: Request, res: Response) => {
   try {
     const { firstName, lastName, email, password, role } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
 
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ email: normalizedEmail });
 
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    const user = await User.create({
+    // Auto-generate OTP
+    const otp = generateOTP();
+    await storeOTP(normalizedEmail, otp);
+    await sendOTPEmail(normalizedEmail, otp);
+
+    // Cache the registration payload in Redis (TTL: 10 minutes)
+    const pendingUser = {
       firstName,
       lastName,
-      email,
+      email: normalizedEmail,
       password,
       role: role || 'Buyer',
+    };
+    const cacheKey = `pendingUser:${normalizedEmail}`;
+    await redisClient.set(cacheKey, JSON.stringify(pendingUser), { EX: 600 });
+
+    res.status(200).json({
+      message: 'Verification code sent to email',
+      email: normalizedEmail,
     });
-
-    if (user) {
-      // Auto-generate and send OTP
-      const otp = generateOTP();
-      await storeOTP(user.email, otp);
-      await sendOTPEmail(user.email, otp);
-
-      const accessToken = generateAccessToken(user._id.toString());
-      const refreshToken = await generateRefreshToken(user._id.toString());
-
-      res.status(201).json({
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
-        isVerified: user.isVerified,
-        accessToken,
-        refreshToken,
-      });
-    } else {
-      res.status(400).json({ message: 'Invalid user data' });
-    }
   } catch (error) {
     console.error('Register error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -121,25 +113,48 @@ export const sendOTP = async (req: Request, res: Response) => {
   }
 };
 
-// Verify OTP from Redis store and update user verification status
+// Verify OTP, persist user details to database, and return auth tokens
 export const verifyOTP = async (req: Request, res: Response) => {
   try {
     const { email, otp } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
 
-    const isValid = await verifyOTPCode(email, otp);
+    const isValid = await verifyOTPCode(normalizedEmail, otp);
     if (!isValid) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    const cacheKey = `pendingUser:${normalizedEmail}`;
+    const cachedPayload = await redisClient.get(cacheKey);
+    if (!cachedPayload) {
+      return res.status(400).json({ message: 'Registration session expired. Please sign up again.' });
     }
 
-    user.isVerified = true;
-    await user.save();
+    const pendingData = JSON.parse(cachedPayload);
 
-    res.json({ message: 'Email verified successfully', isVerified: true });
+    // Create the user in database (Mongoose automatically runs pre-save validation/hashing)
+    const user = await User.create({
+      ...pendingData,
+      isVerified: true,
+    });
+
+    const accessToken = generateAccessToken(user._id.toString());
+    const refreshToken = await generateRefreshToken(user._id.toString());
+
+    // Clean up cached payload
+    await redisClient.del(cacheKey);
+
+    res.status(201).json({
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      isVerified: user.isVerified,
+      token: accessToken,
+      accessToken,
+      refreshToken,
+    });
   } catch (error: any) {
     console.error('Verify OTP error:', error);
     res.status(500).json({ message: 'Server error' });
