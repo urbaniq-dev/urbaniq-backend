@@ -10,18 +10,18 @@ export const sendOTPEmail = async (email: string, otp: string): Promise<boolean>
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.SMTP_EMAIL || 'urbaniq.test@gmail.com',
-        pass: process.env.SMTP_PASSWORD || '',
+        user: process.env.EMAIL_USER || 'skillforgeoffical@gmail.com',
+        pass: process.env.EMAIL_PASS || '',
       },
     });
 
-    if (!process.env.SMTP_PASSWORD) {
-      console.warn("⚠️ SMTP_PASSWORD not set in .env. OTP was only logged to console.");
+    if (!process.env.EMAIL_PASS) {
+      console.warn("⚠️ EMAIL_PASS not set in .env. OTP was only logged to console.");
       return true; // Return true as fallback is active
     }
 
     const mailOptions = {
-      from: `"Urbaniq Security" <${process.env.SMTP_EMAIL || 'urbaniq.test@gmail.com'}>`,
+      from: `"Urbaniq Security" <${process.env.EMAIL_USER || 'skillforgeoffical@gmail.com'}>`,
       to: email,
       subject: 'Your Urbaniq Verification Code',
       text: `Your Urbaniq verification code is: ${otp}\n\nThis code will expire in 5 minutes.\n\nDo not share this code with anyone.`,
