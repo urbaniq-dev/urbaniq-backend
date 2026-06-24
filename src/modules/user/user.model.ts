@@ -11,6 +11,7 @@ export interface IUser extends Document {
   isVerified: boolean;
   profileImage?: string;
   phone?: string;
+  savedProperties?: mongoose.Types.ObjectId[];
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -30,6 +31,7 @@ const UserSchema: Schema = new Schema(
     isVerified: { type: Boolean, default: false }, // Useful for agents
     profileImage: { type: String },
     phone: { type: String },
+    savedProperties: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Property' }],
   },
   { timestamps: true }
 );

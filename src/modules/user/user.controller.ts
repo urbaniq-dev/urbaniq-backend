@@ -53,3 +53,50 @@ export const getAgents = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server Error' });
   }
 };
+
+export const getFavorites = async (req: Request, res: Response) => {
+  try {
+    const user = await User.findById((req as any).user.id).populate('savedProperties');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user.savedProperties || []);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+export const addFavorite = async (req: Request, res: Response) => {
+  try {
+    const { propertyId } = req.params;
+    const user = await User.findById((req as any).user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (!user.savedProperties) user.savedProperties = [];
+    
+    // Check if already added
+    if (!user.savedProperties.includes(propertyId as any)) {
+      user.savedProperties.push(propertyId as any);
+      await user.save();
+    }
+    
+    res.json({ message: 'Added to favorites', savedProperties: user.savedProperties });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+export const removeFavorite = async (req: Request, res: Response) => {
+  try {
+    const { propertyId } = req.params;
+    const user = await User.findById((req as any).user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user.savedProperties) {
+      user.savedProperties = user.savedProperties.filter(id => id.toString() !== propertyId);
+      await user.save();
+    }
+    
+    res.json({ message: 'Removed from favorites', savedProperties: user.savedProperties });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+};

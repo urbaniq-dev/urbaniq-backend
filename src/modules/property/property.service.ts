@@ -73,7 +73,7 @@ export const updatePropertyById = async (id: string, updateBody: Partial<IProper
     throw new AppError('User not authorized to update this property', 403);
   }
 
-  Object.assign(property, updateBody);
+  property.set(updateBody);
   await property.save();
 
   return property;
