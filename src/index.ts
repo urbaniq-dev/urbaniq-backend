@@ -5,12 +5,14 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import connectDB from './config/db';
+import { connectRedis } from './config/redis';
 
 // Load environment variables
 dotenv.config();
 
 // Connect to database
 connectDB();
+connectRedis();
 
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
