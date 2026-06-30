@@ -1,5 +1,9 @@
 import { Router } from 'express';
+<<<<<<< Updated upstream
 import { getUserProfile, updateProfile, getAgents, getAgentById } from './user.controller';
+=======
+import { getUserProfile, updateProfile, getAgents, getFavorites, addFavorite, removeFavorite, getAgentById } from './user.controller';
+>>>>>>> Stashed changes
 import { protect } from '../../core/middlewares/auth.middleware';
 import { upload } from '../../core/middlewares/upload.middleware';
 

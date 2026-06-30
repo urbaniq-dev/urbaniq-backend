@@ -107,7 +107,10 @@ export const getMe = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 export const refreshToken = async (req: Request, res: Response) => {
   try {
     const rfToken = req.cookies.refreshToken;
@@ -123,7 +126,10 @@ export const refreshToken = async (req: Request, res: Response) => {
     }
 
     const newAccessToken = generateAccessToken(user._id.toString());
+<<<<<<< Updated upstream
     
+=======
+>>>>>>> Stashed changes
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
