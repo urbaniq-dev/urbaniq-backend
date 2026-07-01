@@ -17,10 +17,12 @@ export interface IProperty extends Document {
   };
   amenities: string[];
   images: string[];
-  status: 'Available' | 'Pending' | 'Sold' | 'Rented';
+  documents: string[];
+  status: 'Draft' | 'Pending Approval' | 'Approved' | 'Published' | 'Sold' | 'Rented';
   propertyType: 'Villa' | 'Apartment' | 'Penthouse' | 'Commercial' | 'Townhouse' | 'Land';
   ownerId: mongoose.Types.ObjectId;
   agentId?: mongoose.Types.ObjectId;
+  views?: number;
 }
 
 const PropertySchema: Schema = new Schema(
@@ -41,10 +43,11 @@ const PropertySchema: Schema = new Schema(
     },
     amenities: [{ type: String }],
     images: [{ type: String }],
+    documents: [{ type: String }],
     status: {
       type: String,
-      enum: ['Available', 'Pending', 'Sold', 'Rented'],
-      default: 'Available',
+      enum: ['Draft', 'Pending Approval', 'Approved', 'Published', 'Sold', 'Rented'],
+      default: 'Pending Approval',
     },
     propertyType: {
       type: String,
@@ -59,6 +62,10 @@ const PropertySchema: Schema = new Schema(
     agentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+    },
+    views: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true }

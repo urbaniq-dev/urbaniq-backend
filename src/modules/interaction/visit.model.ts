@@ -6,7 +6,7 @@ export interface IVisit extends Document {
   agentId?: mongoose.Types.ObjectId;
   date: Date;
   timeSlot: string;
-  status: 'Scheduled' | 'Completed' | 'Cancelled';
+  status: 'Pending' | 'Accepted' | 'Rejected' | 'Rescheduled' | 'Completed' | 'Cancelled';
 }
 
 const VisitSchema: Schema = new Schema(
@@ -16,7 +16,7 @@ const VisitSchema: Schema = new Schema(
     agentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     date: { type: Date, required: true },
     timeSlot: { type: String, required: true },
-    status: { type: String, enum: ['Scheduled', 'Completed', 'Cancelled'], default: 'Scheduled' },
+    status: { type: String, enum: ['Pending', 'Accepted', 'Rejected', 'Rescheduled', 'Completed', 'Cancelled'], default: 'Pending' },
   },
   { timestamps: true }
 );

@@ -7,10 +7,11 @@ export const notFound = (req: Request, res: Response, next: NextFunction) => {
 };
 
 export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  const statusCode = err.statusCode || (res.statusCode === 200 ? 500 : res.statusCode);
+  console.error('[ERROR HANDLER]', err);
   res.status(statusCode);
   res.json({
-    message: err.message,
+    message: err.message || 'Internal Server Error',
     stack: process.env.NODE_ENV === 'production' ? null : err.stack,
   });
 };

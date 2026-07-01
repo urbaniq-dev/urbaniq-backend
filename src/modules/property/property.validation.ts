@@ -21,8 +21,9 @@ export const createProperty = Joi.object({
   features: featuresSchema.required(),
   amenities: Joi.array().items(Joi.string()).optional(),
   images: Joi.array().items(Joi.string().uri()).optional(),
-  status: Joi.string().valid('Available', 'Pending', 'Sold', 'Rented').default('Available'),
-  propertyType: Joi.string().valid('Villa', 'Apartment', 'Penthouse', 'Commercial', 'Townhouse').required(),
+  documents: Joi.array().items(Joi.string().uri()).optional(),
+  status: Joi.string().valid('Draft', 'Pending Approval', 'Approved', 'Published', 'Sold', 'Rented', 'Available', 'Pending').default('Pending Approval'),
+  propertyType: Joi.string().valid('Villa', 'Apartment', 'Penthouse', 'Commercial', 'Townhouse', 'Land').required(),
 });
 
 export const updateProperty = Joi.object({
@@ -33,12 +34,13 @@ export const updateProperty = Joi.object({
   features: featuresSchema,
   amenities: Joi.array().items(Joi.string()),
   images: Joi.array().items(Joi.string().uri()),
-  status: Joi.string().valid('Available', 'Pending', 'Sold', 'Rented'),
-  propertyType: Joi.string().valid('Villa', 'Apartment', 'Penthouse', 'Commercial', 'Townhouse'),
+  documents: Joi.array().items(Joi.string().uri()),
+  status: Joi.string().valid('Draft', 'Pending Approval', 'Approved', 'Published', 'Sold', 'Rented', 'Available', 'Pending'),
+  propertyType: Joi.string().valid('Villa', 'Apartment', 'Penthouse', 'Commercial', 'Townhouse', 'Land'),
 }).min(1);
 
 export const getProperties = Joi.object({
-  type: Joi.string().valid('Villa', 'Apartment', 'Penthouse', 'Commercial', 'Townhouse'),
+  type: Joi.string().valid('Villa', 'Apartment', 'Penthouse', 'Commercial', 'Townhouse', 'Land'),
   city: Joi.string(),
   minPrice: Joi.number().positive(),
   maxPrice: Joi.number().positive(),
