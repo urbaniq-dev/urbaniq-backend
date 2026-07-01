@@ -195,30 +195,33 @@ export const googleRegister = async (req: Request, res: Response) => {
   }
 };
 
-// Send OTP via Email using Redis store
+// Send OTP via Email using Redis store (handles both existing users and pending registrations)
 export const sendOTP = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
 
-    const user = await User.findOne({ email });
-    if (!user) {
+    // Check if the user exists in the database
+    const user = await User.findOne({ email: normalizedEmail });
+
+    // Also check if there's a pending user registration session in Redis
+    const cacheKey = `pendingUser:${normalizedEmail}`;
+    const pendingUser = await redisClient.get(cacheKey);
+
+    if (!user && !pendingUser) {
       return res.status(404).json({ message: 'User with this email does not exist' });
     }
 
     const otp = generateOTP();
-    await storeOTP(email, otp);
+    await storeOTP(normalizedEmail, otp);
 
-    const emailSent = await sendOTPEmail(email, otp);
+    const emailSent = await sendOTPEmail(normalizedEmail, otp);
     if (!emailSent) {
       return res.status(500).json({ message: 'Failed to send OTP email' });
     }
 
-    // For debugging/development purposes, we also return the OTP in the body if SMTP is missing
-    const showOtpInResponse = !process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD;
-
     res.json({
       message: 'OTP sent successfully',
-      ...(showOtpInResponse ? { otp } : {})
     });
   } catch (error: any) {
     console.error('Send OTP error:', error);
@@ -338,11 +341,8 @@ export const forgotPassword = async (req: Request, res: Response) => {
       return res.status(500).json({ message: 'Failed to send reset email' });
     }
 
-    const showOtpInResponse = !process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD;
-
     res.json({
       message: 'Password reset code sent to email',
-      ...(showOtpInResponse ? { otp } : {})
     });
   } catch (error) {
     console.error('Forgot password error:', error);
