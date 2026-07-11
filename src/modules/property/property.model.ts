@@ -21,6 +21,11 @@ export interface IProperty extends Document {
   amenities: string[];
   images: string[];
   documents: string[];
+  contactDetails?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
   status: 'Draft' | 'Pending Approval' | 'Approved' | 'Published' | 'Sold' | 'Rented';
   propertyType: 'Villa' | 'Apartment' | 'Penthouse' | 'Commercial' | 'Townhouse' | 'Land';
   ownerId: mongoose.Types.ObjectId;
@@ -50,6 +55,11 @@ const PropertySchema: Schema = new Schema(
     amenities: [{ type: String }],
     images: [{ type: String }],
     documents: [{ type: String }],
+    contactDetails: {
+      name: { type: String },
+      email: { type: String },
+      phone: { type: String },
+    },
     status: {
       type: String,
       enum: ['Draft', 'Pending Approval', 'Approved', 'Published', 'Sold', 'Rented'],

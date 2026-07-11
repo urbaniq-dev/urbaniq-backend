@@ -13,7 +13,7 @@ import {
 
 export const registerUser = async (req: Request, res: Response) => {
   try {
-    const { firstName, lastName, email, password, role } = req.body;
+    const { firstName, lastName, email, password, role, phone, experienceYears, specialties, profileImage, verificationDocument, agentLocation, operatingAreas } = req.body;
     const normalizedEmail = email.toLowerCase().trim();
 
     const userExists = await User.findOne({ email: normalizedEmail });
@@ -34,6 +34,21 @@ export const registerUser = async (req: Request, res: Response) => {
       email: normalizedEmail,
       password,
       role: role || 'Buyer',
+      phone,
+      profileImage,
+      agentProfile: role === 'Agent' ? {
+        experienceYears: experienceYears ? Number(experienceYears) : 0,
+        specialties: specialties || [],
+        verificationDocument,
+        location: agentLocation ? {
+          address: agentLocation.address || '',
+          city: agentLocation.city || '',
+          state: agentLocation.state || '',
+          country: agentLocation.country || '',
+          zipCode: agentLocation.zipCode || '',
+          operatingAreas: operatingAreas || [],
+        } : undefined,
+      } : undefined,
     };
     const cacheKey = `pendingUser:${normalizedEmail}`;
     await redisClient.set(cacheKey, JSON.stringify(pendingUser), { EX: 600 });
@@ -172,7 +187,7 @@ export const googleRegister = async (req: Request, res: Response) => {
       lastName: payload.family_name || 'User',
       email,
       googleId: payload.sub,
-      isVerified: true,
+      isVerified: role === 'Agent' ? false : true,
       role,
     });
 
@@ -252,7 +267,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
     // Create the user in database (Mongoose automatically runs pre-save validation/hashing)
     const user = await User.create({
       ...pendingData,
-      isVerified: true,
+      isVerified: pendingData.role === 'Agent' ? false : true,
     });
 
     const accessToken = generateAccessToken(user._id.toString());

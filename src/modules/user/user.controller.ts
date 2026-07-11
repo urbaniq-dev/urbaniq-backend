@@ -54,6 +54,18 @@ export const getAgents = async (req: Request, res: Response) => {
   }
 };
 
+export const getAgentProfile = async (req: Request, res: Response) => {
+  try {
+    const agent = await User.findOne({ _id: req.params.id, role: 'Agent' }).select('-password');
+    if (!agent) {
+      return res.status(404).json({ message: 'Agent not found' });
+    }
+    res.json(agent);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
 export const getFavorites = async (req: Request, res: Response) => {
   try {
     const user = await User.findById((req as any).user.id).populate('savedProperties');

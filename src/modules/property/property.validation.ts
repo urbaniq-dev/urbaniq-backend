@@ -16,6 +16,12 @@ const featuresSchema = Joi.object({
   zoning: Joi.string().valid('Residential', 'Commercial', 'Agricultural', 'Industrial').optional(),
 });
 
+const contactSchema = Joi.object({
+  name: Joi.string().required(),
+  email: Joi.string().email().required(),
+  phone: Joi.string().required(),
+});
+
 export const createProperty = Joi.object({
   title: Joi.string().min(5).max(100).required(),
   description: Joi.string().min(10).required(),
@@ -25,6 +31,7 @@ export const createProperty = Joi.object({
   amenities: Joi.array().items(Joi.string()).optional(),
   images: Joi.array().items(Joi.string().uri()).optional(),
   documents: Joi.array().items(Joi.string().uri()).optional(),
+  contactDetails: contactSchema.optional(),
   status: Joi.string().valid('Draft', 'Pending Approval', 'Approved', 'Published', 'Sold', 'Rented', 'Available', 'Pending').default('Pending Approval'),
   propertyType: Joi.string().valid('Villa', 'Apartment', 'Penthouse', 'Commercial', 'Townhouse', 'Land').required(),
 });
@@ -38,6 +45,7 @@ export const updateProperty = Joi.object({
   amenities: Joi.array().items(Joi.string()),
   images: Joi.array().items(Joi.string().uri()),
   documents: Joi.array().items(Joi.string().uri()),
+  contactDetails: contactSchema,
   status: Joi.string().valid('Draft', 'Pending Approval', 'Approved', 'Published', 'Sold', 'Rented', 'Available', 'Pending'),
   propertyType: Joi.string().valid('Villa', 'Apartment', 'Penthouse', 'Commercial', 'Townhouse', 'Land'),
 }).min(1);

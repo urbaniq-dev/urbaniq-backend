@@ -1,16 +1,36 @@
 import { Router } from 'express';
-import { createInquiry, getInquiries, scheduleVisit, getVisits, updateInquiryStatus, updateVisitStatus, createOffer, getOffers, updateOfferStatus } from './interaction.controller';
+import { 
+  createInquiry, 
+  getInquiries, 
+  updateInquiryStatus,
+  scheduleVisit, 
+  getVisits, 
+  updateVisitStatus,
+  createOffer,
+  getOffers,
+  updateOfferStatus,
+  getMessages,
+  sendMessage,
+  getCollaborationMessages,
+  sendCollaborationMessage,
+  createReview,
+  getAgentReviews
+} from './interaction.controller';
 import { protect, authorize } from '../../core/middlewares/auth.middleware';
 
 const router = Router();
 
-// Inquiries
+// Inquiries & Messages
 router.route('/inquiries')
   .post(protect, authorize('Buyer'), createInquiry)
   .get(protect, getInquiries);
 
 router.route('/inquiries/:id')
-  .put(protect, updateInquiryStatus);
+  .put(protect, authorize('Owner', 'Agent'), updateInquiryStatus);
+
+router.route('/inquiries/:id/messages')
+  .get(protect, getMessages)
+  .post(protect, sendMessage);
 
 // Visits
 router.route('/visits')
@@ -18,7 +38,7 @@ router.route('/visits')
   .get(protect, getVisits);
 
 router.route('/visits/:id')
-  .put(protect, updateVisitStatus);
+  .put(protect, authorize('Owner', 'Agent', 'Admin'), updateVisitStatus);
 
 // Offers
 router.route('/offers')
@@ -27,5 +47,17 @@ router.route('/offers')
 
 router.route('/offers/:id')
   .put(protect, updateOfferStatus);
+
+// Collaboration Chat
+router.route('/properties/:id/collaboration-messages')
+  .get(protect, authorize('Owner', 'Agent'), getCollaborationMessages)
+  .post(protect, authorize('Owner', 'Agent'), sendCollaborationMessage);
+
+// Reviews
+router.route('/reviews')
+  .post(protect, authorize('Buyer', 'Owner'), createReview);
+
+router.route('/reviews/agent/:agentId')
+  .get(getAgentReviews); // Public route, can be viewed by anyone
 
 export default router;

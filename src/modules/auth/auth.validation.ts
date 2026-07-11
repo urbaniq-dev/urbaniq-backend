@@ -5,7 +5,20 @@ export const registerSchema = Joi.object({
   lastName: Joi.string().required(),
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
-  role: Joi.string().valid('Admin', 'Owner', 'Agent', 'Buyer').optional()
+  role: Joi.string().valid('Admin', 'Owner', 'Agent', 'Buyer').optional(),
+  phone: Joi.string().optional().allow(''),
+  experienceYears: Joi.alternatives().try(Joi.string(), Joi.number()).optional().allow(''),
+  specialties: Joi.any().optional(),
+  profileImage: Joi.string().optional().allow(''),
+  verificationDocument: Joi.string().optional().allow(''),
+  agentLocation: Joi.object({
+    address: Joi.string().optional().allow(''),
+    city: Joi.string().optional().allow(''),
+    state: Joi.string().optional().allow(''),
+    country: Joi.string().optional().allow(''),
+    zipCode: Joi.string().optional().allow(''),
+  }).optional(),
+  operatingAreas: Joi.array().items(Joi.string()).optional(),
 });
 
 export const loginSchema = Joi.object({
