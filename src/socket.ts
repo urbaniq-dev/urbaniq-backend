@@ -7,7 +7,11 @@ const userSockets = new Map<string, string>(); // userId -> socketId
 export const initSocket = (server: HttpServer) => {
   io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:3000',
+      origin: [
+        process.env.CLIENT_URL,
+        'http://localhost:3000',
+        'http://localhost:3001'
+      ].filter(Boolean) as string[],
       methods: ['GET', 'POST'],
       credentials: true,
     },
