@@ -19,7 +19,10 @@ export interface IProperty extends Document {
     zoning?: 'Residential' | 'Commercial' | 'Agricultural' | 'Industrial';
   };
   amenities: string[];
-  images: string[];
+  images: {
+    original: string;
+    thumbnail: string;
+  }[];
   documents: string[];
   contactDetails?: {
     name: string;
@@ -53,7 +56,10 @@ const PropertySchema: Schema = new Schema(
       zoning: { type: String, enum: ['Residential', 'Commercial', 'Agricultural', 'Industrial'] },
     },
     amenities: [{ type: String }],
-    images: [{ type: String }],
+    images: [{
+      original: { type: String, required: true },
+      thumbnail: { type: String, required: true }
+    }],
     documents: [{ type: String }],
     contactDetails: {
       name: { type: String },

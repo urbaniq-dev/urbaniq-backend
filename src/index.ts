@@ -42,6 +42,7 @@ import interactionRoutes from './modules/interaction/interaction.route';
 import adminRoutes from './modules/admin/admin.route';
 import notificationRoutes from './modules/notification/notification.route';
 import paymentRoutes from './modules/payment/payment.routes';
+import uploadRoutes from './modules/upload/upload.route';
 import { notFound, errorHandler } from './core/middlewares/error.middleware';
 
 // Basic Route
@@ -58,6 +59,7 @@ app.use('/api/interactions', interactionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Error Handling Middlewares
 app.use(notFound);
