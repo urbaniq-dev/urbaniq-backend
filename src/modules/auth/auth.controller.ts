@@ -4,6 +4,38 @@ import User from '../user/user.model';
 import { redisClient } from '../../config/redis';
 import { generateOTP, storeOTP, verifyOTPCode } from './services/otp.service';
 import { sendOTPEmail, sendResetPasswordEmail } from './services/email.service';
+import sharp from 'sharp';
+import crypto from 'crypto';
+import { uploadToS3 } from '../../core/middlewares/upload.middleware';
+
+// Helper to convert base64 image/document and upload to S3
+const uploadBase64ToS3 = async (base64Str: string, folder: string): Promise<string> => {
+  if (!base64Str) return '';
+  const matches = base64Str.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+  if (!matches || matches.length !== 3) {
+    return base64Str; // Return as-is if already uploaded URL
+  }
+
+  const mimeType = matches[1];
+  const base64Data = matches[2];
+  const buffer = Buffer.from(base64Data, 'base64');
+  const fileId = crypto.randomUUID();
+
+  if (mimeType.startsWith('image/')) {
+    // Compress user profile picture
+    const compressedBuffer = await sharp(buffer)
+      .resize(300, 300, { fit: 'cover' })
+      .webp({ quality: 80 })
+      .toBuffer();
+    
+    return await uploadToS3(compressedBuffer, `users/${folder}/${fileId}.webp`, 'image/webp');
+  } else {
+    // Save document as-is
+    const extension = mimeType === 'application/pdf' ? 'pdf' : 'jpg';
+    return await uploadToS3(buffer, `users/${folder}/${fileId}.${extension}`, mimeType);
+  }
+};
+import { catchAsync } from '../../core/utils/catchAsync';
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -11,72 +43,84 @@ import {
   revokeRefreshToken,
 } from './services/token.service';
 
-export const registerUser = async (req: Request, res: Response) => {
-  try {
-    const { firstName, lastName, email, password, role } = req.body;
-    const normalizedEmail = email.toLowerCase().trim();
+export const registerUser = catchAsync(async (req: Request, res: Response) => {
+  const { firstName, lastName, email, password, role, phone, experienceYears, specialties, profileImage, verificationDocument, agentLocation, operatingAreas } = req.body;
+  const normalizedEmail = email.toLowerCase().trim();
 
-    const userExists = await User.findOne({ email: normalizedEmail });
+  const userExists = await User.findOne({ email: normalizedEmail });
 
-    if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
+  if (userExists) {
+    return res.status(400).json({ message: 'User already exists' });
+  }
 
-    // Auto-generate OTP
-    const otp = generateOTP();
-    await storeOTP(normalizedEmail, otp);
-    await sendOTPEmail(normalizedEmail, otp);
+  // Auto-generate OTP
+  const otp = generateOTP();
+  await storeOTP(normalizedEmail, otp);
+  await sendOTPEmail(normalizedEmail, otp);
 
-    // Cache the registration payload in Redis (TTL: 10 minutes)
-    const pendingUser = {
-      firstName,
-      lastName,
-      email: normalizedEmail,
-      password,
-      role: role || 'Buyer',
-    };
-    const cacheKey = `pendingUser:${normalizedEmail}`;
-    await redisClient.set(cacheKey, JSON.stringify(pendingUser), { EX: 600 });
+  // Process and upload images/documents to S3 if base64
+  const uploadedProfileImage = profileImage ? await uploadBase64ToS3(profileImage, 'profiles') : '';
+  const uploadedVerificationDocument = (role === 'Agent' && verificationDocument) 
+    ? await uploadBase64ToS3(verificationDocument, 'documents') 
+    : '';
 
-    res.status(200).json({
-      message: 'Verification code sent to email',
-      email: normalizedEmail,
+  // Cache the registration payload in Redis (TTL: 10 minutes)
+  const pendingUser = {
+    firstName,
+    lastName,
+    email: normalizedEmail,
+    password,
+    role: role || 'Buyer',
+    phone,
+    profileImage: uploadedProfileImage,
+    agentProfile: role === 'Agent' ? {
+      experienceYears: experienceYears ? Number(experienceYears) : 0,
+      specialties: specialties || [],
+      verificationDocument: uploadedVerificationDocument,
+      location: agentLocation ? {
+        address: agentLocation.address || '',
+        city: agentLocation.city || '',
+        state: agentLocation.state || '',
+        country: agentLocation.country || '',
+        zipCode: agentLocation.zipCode || '',
+        operatingAreas: operatingAreas || [],
+      } : undefined,
+    } : undefined,
+  };
+
+  const cacheKey = `pendingUser:${normalizedEmail}`;
+  await redisClient.set(cacheKey, JSON.stringify(pendingUser), { EX: 600 });
+
+  res.status(200).json({
+    message: 'Verification code sent to email',
+    email: normalizedEmail,
+  });
+});
+
+export const loginUser = catchAsync(async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (user && (await user.comparePassword(password))) {
+    const accessToken = generateAccessToken(user._id.toString());
+    const refreshToken = await generateRefreshToken(user._id.toString());
+
+    res.json({
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      isVerified: user.isVerified,
+      token: accessToken,
+      accessToken,
+      refreshToken,
     });
-  } catch (error) {
-    console.error('Register error:', error);
-    res.status(500).json({ message: 'Server error' });
+  } else {
+    res.status(401).json({ message: 'Invalid email or password' });
   }
-};
-
-export const loginUser = async (req: Request, res: Response) => {
-  try {
-    const { email, password } = req.body;
-
-    const user = await User.findOne({ email });
-
-    if (user && (await user.comparePassword(password))) {
-      const accessToken = generateAccessToken(user._id.toString());
-      const refreshToken = await generateRefreshToken(user._id.toString());
-
-      res.json({
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
-        isVerified: user.isVerified,
-        token: accessToken,
-        accessToken,
-        refreshToken,
-      });
-    } else {
-      res.status(401).json({ message: 'Invalid email or password' });
-    }
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
+});
 
 export const googleAuth = async (req: Request, res: Response) => {
   try {
@@ -172,7 +216,7 @@ export const googleRegister = async (req: Request, res: Response) => {
       lastName: payload.family_name || 'User',
       email,
       googleId: payload.sub,
-      isVerified: true,
+      isVerified: role === 'Agent' ? false : true,
       role,
     });
 
@@ -252,7 +296,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
     // Create the user in database (Mongoose automatically runs pre-save validation/hashing)
     const user = await User.create({
       ...pendingData,
-      isVerified: true,
+      isVerified: pendingData.role === 'Agent' ? false : true,
     });
 
     const accessToken = generateAccessToken(user._id.toString());

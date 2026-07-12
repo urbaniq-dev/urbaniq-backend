@@ -9,8 +9,29 @@ export interface IUser extends Document {
   role: 'Admin' | 'Owner' | 'Agent' | 'Buyer';
   googleId?: string;
   isVerified: boolean;
+  status: 'Active' | 'Blocked';
   profileImage?: string;
   phone?: string;
+  agentProfile?: {
+    bio?: string;
+    experienceYears?: number;
+    specialties?: string[];
+    languages?: string[];
+    verificationDocument?: string;
+    location?: {
+      address?: string;
+      city?: string;
+      state?: string;
+      country?: string;
+      zipCode?: string;
+      operatingAreas?: string[];
+    };
+    socialLinks?: {
+      linkedin?: string;
+      twitter?: string;
+      website?: string;
+    };
+  };
   savedProperties?: mongoose.Types.ObjectId[];
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -29,8 +50,29 @@ const UserSchema: Schema = new Schema(
     },
     googleId: { type: String },
     isVerified: { type: Boolean, default: false }, // Useful for agents
+    status: { type: String, enum: ['Active', 'Blocked'], default: 'Active' },
     profileImage: { type: String },
     phone: { type: String },
+    agentProfile: {
+      bio: { type: String },
+      experienceYears: { type: Number },
+      specialties: [{ type: String }],
+      languages: [{ type: String }],
+      verificationDocument: { type: String },
+      location: {
+        address: { type: String },
+        city: { type: String },
+        state: { type: String },
+        country: { type: String },
+        zipCode: { type: String },
+        operatingAreas: [{ type: String }],
+      },
+      socialLinks: {
+        linkedin: { type: String },
+        twitter: { type: String },
+        website: { type: String },
+      },
+    },
     savedProperties: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Property' }],
   },
   { timestamps: true }

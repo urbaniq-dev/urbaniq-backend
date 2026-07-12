@@ -27,8 +27,8 @@ export const createAssignment = async (req: Request, res: Response) => {
 
     const createdAssignment = await assignment.save();
     
-    // Emit event to the specific agent
-    emitToUser(agentId.toString(), 'new_assignment_request', createdAssignment);
+    // Send real-time notification to the agent
+    emitToUser(agentId.toString(), 'new_assignment_request', createdAssignment.toJSON());
 
     res.status(201).json(createdAssignment);
   } catch (error) {
@@ -82,13 +82,16 @@ export const respondToAssignment = async (req: Request, res: Response) => {
     assignment.status = status;
     await assignment.save();
 
-    // If accepted, update the property to assign the agent
+    // If accepted, update the property to assign the agent and send it to admin approval
     if (status === 'Accepted') {
-      await Property.findByIdAndUpdate(assignment.propertyId, { agentId: assignment.agentId });
+      await Property.findByIdAndUpdate(assignment.propertyId, { 
+        agentId: assignment.agentId,
+        status: 'Pending Approval'
+      });
     }
 
-    // Emit event to the owner who created the assignment
-    emitToUser(assignment.ownerId.toString(), 'assignment_responded', assignment);
+    // Send real-time notification to the owner
+    emitToUser(assignment.ownerId.toString(), 'assignment_responded', assignment.toJSON());
 
     res.json(assignment);
   } catch (error) {

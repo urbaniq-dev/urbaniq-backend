@@ -19,8 +19,16 @@ export interface IProperty extends Document {
     zoning?: 'Residential' | 'Commercial' | 'Agricultural' | 'Industrial';
   };
   amenities: string[];
-  images: string[];
+  images: {
+    original: string;
+    thumbnail: string;
+  }[];
   documents: string[];
+  contactDetails?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
   status: 'Draft' | 'Pending Approval' | 'Approved' | 'Published' | 'Sold' | 'Rented';
   propertyType: 'Villa' | 'Apartment' | 'Penthouse' | 'Commercial' | 'Townhouse' | 'Land';
   ownerId: mongoose.Types.ObjectId;
@@ -48,8 +56,16 @@ const PropertySchema: Schema = new Schema(
       zoning: { type: String, enum: ['Residential', 'Commercial', 'Agricultural', 'Industrial'] },
     },
     amenities: [{ type: String }],
-    images: [{ type: String }],
+    images: [{
+      original: { type: String, required: true },
+      thumbnail: { type: String, required: true }
+    }],
     documents: [{ type: String }],
+    contactDetails: {
+      name: { type: String },
+      email: { type: String },
+      phone: { type: String },
+    },
     status: {
       type: String,
       enum: ['Draft', 'Pending Approval', 'Approved', 'Published', 'Sold', 'Rented'],

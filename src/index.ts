@@ -27,13 +27,7 @@ const allowedOrigins = [
 ].filter(Boolean) as string[];
 
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true,
   credentials: true,
 }));
 app.use(cookieParser());
@@ -45,6 +39,10 @@ import userRoutes from './modules/user/user.route';
 import propertyRoutes from './modules/property/property.route';
 import assignmentRoutes from './modules/property/assignment.route';
 import interactionRoutes from './modules/interaction/interaction.route';
+import adminRoutes from './modules/admin/admin.route';
+import notificationRoutes from './modules/notification/notification.route';
+import paymentRoutes from './modules/payment/payment.routes';
+import uploadRoutes from './modules/upload/upload.route';
 import { notFound, errorHandler } from './core/middlewares/error.middleware';
 
 // Basic Route
@@ -58,6 +56,10 @@ app.use('/api/users', userRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/assignments', assignmentRoutes);
 app.use('/api/interactions', interactionRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Error Handling Middlewares
 app.use(notFound);

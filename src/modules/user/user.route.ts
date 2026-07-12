@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getUserProfile, updateProfile, getAgents, getFavorites, addFavorite, removeFavorite } from './user.controller';
+import { getUserProfile, updateProfile, getAgents, getAgentProfile, getFavorites, addFavorite, removeFavorite } from './user.controller';
 import { protect } from '../../core/middlewares/auth.middleware';
 
 const router = Router();
@@ -14,5 +14,6 @@ router.post('/favorites/:propertyId', protect, addFavorite);
 router.delete('/favorites/:propertyId', protect, removeFavorite);
 
 router.get('/agents', getAgents);
+router.get('/agents/:id', getAgentProfile);
 
 export default router;

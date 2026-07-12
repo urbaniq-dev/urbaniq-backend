@@ -2,6 +2,9 @@ import { createClient } from 'redis';
 
 const redisClient = createClient({
   url: process.env.REDIS_URL || 'redis://localhost:6379',
+  socket: {
+    connectTimeout: 10_000, // 10s — avoids timeout errors on remote Redis cold starts
+  },
 });
 
 redisClient.on('error', (err: any) => {
