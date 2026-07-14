@@ -136,12 +136,15 @@ export const sendMessage = async (req: Request, res: Response) => {
       // Buyer sent message, notify agent if one exists, else owner
       if (property.agentId) {
         sendNotification(property.agentId.toString(), 'Message', 'New Message', `New message regarding ${property.title}`, inquiryId.toString());
+        emitToUser(property.agentId.toString(), 'new_message', createdMessage.toJSON());
       } else if (property.ownerId) {
         sendNotification(property.ownerId.toString(), 'Message', 'New Message', `New message regarding ${property.title}`, inquiryId.toString());
+        emitToUser(property.ownerId.toString(), 'new_message', createdMessage.toJSON());
       }
     } else {
       // Owner/Agent sent message, notify buyer
       sendNotification(inquiry.buyerId.toString(), 'Message', 'New Message', `New message regarding ${property.title}`, inquiryId.toString());
+      emitToUser(inquiry.buyerId.toString(), 'new_message', createdMessage.toJSON());
     }
 
     // Update inquiry status
@@ -208,8 +211,10 @@ export const getVisits = async (req: Request, res: Response) => {
 
     // Agent: sees visits for properties they are assigned to
     if (role === 'Agent') {
-      const visits = await Visit.find({ agentId: userId })
-        .populate('propertyId', 'title location address')
+      const assignedProperties = await Property.find({ agentId: userId }).select('_id');
+      const propertyIds = assignedProperties.map((p) => p._id);
+      const visits = await Visit.find({ propertyId: { $in: propertyIds } })
+        .populate('propertyId', 'title location')
         .populate('buyerId', 'firstName lastName phone')
         .sort({ date: 1 });
       return res.json(visits);
@@ -415,8 +420,10 @@ export const sendCollaborationMessage = async (req: Request, res: Response) => {
     // Notify the other party
     if (role === 'Owner' && property.agentId) {
       sendNotification(property.agentId.toString(), 'Message', 'New Collaboration Message', `New message from owner on ${property.title}`, propertyId.toString());
+      emitToUser(property.agentId.toString(), 'new_message', createdMessage.toJSON());
     } else if (role === 'Agent' && property.ownerId) {
       sendNotification(property.ownerId.toString(), 'Message', 'New Collaboration Message', `New message from agent on ${property.title}`, propertyId.toString());
+      emitToUser(property.ownerId.toString(), 'new_message', createdMessage.toJSON());
     }
 
     res.status(201).json(createdMessage);
