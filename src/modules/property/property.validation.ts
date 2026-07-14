@@ -35,7 +35,7 @@ export const createProperty = Joi.object({
   features: featuresSchema.required(),
   amenities: Joi.array().items(Joi.string()).optional(),
   images: Joi.array().items(imageSchema).min(1).required(),
-  documents: Joi.array().items(Joi.string().uri()).optional(),
+  documents: Joi.array().items(Joi.string().uri()).min(1).required(),
   contactDetails: contactSchema.optional(),
   status: Joi.string().valid('Draft', 'Pending Approval', 'Approved', 'Published', 'Sold', 'Rented', 'Available', 'Pending').default('Pending Approval'),
   propertyType: Joi.string().valid('Villa', 'Apartment', 'Penthouse', 'Commercial', 'Townhouse', 'Land').required(),
