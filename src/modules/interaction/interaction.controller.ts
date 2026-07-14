@@ -271,6 +271,16 @@ export const updateVisitStatus = async (req: Request, res: Response) => {
 
     if (!visit) return res.status(404).json({ message: 'Visit not found' });
 
+    // Security check: if user is Buyer, they can only update their own visits, and only to 'Cancelled'
+    if ((req as any).user.role === 'Buyer') {
+      if (visit.buyerId.toString() !== (req as any).user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized to update this visit' });
+      }
+      if (status !== 'Cancelled') {
+        return res.status(400).json({ message: 'Buyers can only cancel their visits' });
+      }
+    }
+
     visit.status = status || visit.status;
     if (date) visit.date = date;
     if (timeSlot) visit.timeSlot = timeSlot;
