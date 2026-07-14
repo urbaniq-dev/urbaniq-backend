@@ -136,12 +136,15 @@ export const sendMessage = async (req: Request, res: Response) => {
       // Buyer sent message, notify agent if one exists, else owner
       if (property.agentId) {
         sendNotification(property.agentId.toString(), 'Message', 'New Message', `New message regarding ${property.title}`, inquiryId.toString());
+        emitToUser(property.agentId.toString(), 'new_message', createdMessage.toJSON());
       } else if (property.ownerId) {
         sendNotification(property.ownerId.toString(), 'Message', 'New Message', `New message regarding ${property.title}`, inquiryId.toString());
+        emitToUser(property.ownerId.toString(), 'new_message', createdMessage.toJSON());
       }
     } else {
       // Owner/Agent sent message, notify buyer
       sendNotification(inquiry.buyerId.toString(), 'Message', 'New Message', `New message regarding ${property.title}`, inquiryId.toString());
+      emitToUser(inquiry.buyerId.toString(), 'new_message', createdMessage.toJSON());
     }
 
     // Update inquiry status
@@ -208,8 +211,10 @@ export const getVisits = async (req: Request, res: Response) => {
 
     // Agent: sees visits for properties they are assigned to
     if (role === 'Agent') {
-      const visits = await Visit.find({ agentId: userId })
-        .populate('propertyId', 'title location address')
+      const assignedProperties = await Property.find({ agentId: userId }).select('_id');
+      const propertyIds = assignedProperties.map((p) => p._id);
+      const visits = await Visit.find({ propertyId: { $in: propertyIds } })
+        .populate('propertyId', 'title location')
         .populate('buyerId', 'firstName lastName phone')
         .sort({ date: 1 });
       return res.json(visits);
@@ -265,6 +270,16 @@ export const updateVisitStatus = async (req: Request, res: Response) => {
     const visit = await Visit.findById(req.params.id);
 
     if (!visit) return res.status(404).json({ message: 'Visit not found' });
+
+    // Security check: if user is Buyer, they can only update their own visits, and only to 'Cancelled'
+    if ((req as any).user.role === 'Buyer') {
+      if (visit.buyerId.toString() !== (req as any).user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized to update this visit' });
+      }
+      if (status !== 'Cancelled') {
+        return res.status(400).json({ message: 'Buyers can only cancel their visits' });
+      }
+    }
 
     visit.status = status || visit.status;
     if (date) visit.date = date;
@@ -415,8 +430,10 @@ export const sendCollaborationMessage = async (req: Request, res: Response) => {
     // Notify the other party
     if (role === 'Owner' && property.agentId) {
       sendNotification(property.agentId.toString(), 'Message', 'New Collaboration Message', `New message from owner on ${property.title}`, propertyId.toString());
+      emitToUser(property.agentId.toString(), 'new_message', createdMessage.toJSON());
     } else if (role === 'Agent' && property.ownerId) {
       sendNotification(property.ownerId.toString(), 'Message', 'New Collaboration Message', `New message from agent on ${property.title}`, propertyId.toString());
+      emitToUser(property.ownerId.toString(), 'new_message', createdMessage.toJSON());
     }
 
     res.status(201).json(createdMessage);

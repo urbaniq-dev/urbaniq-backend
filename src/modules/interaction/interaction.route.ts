@@ -38,7 +38,7 @@ router.route('/visits')
   .get(protect, getVisits);
 
 router.route('/visits/:id')
-  .put(protect, authorize('Owner', 'Agent', 'Admin'), updateVisitStatus);
+  .put(protect, authorize('Owner', 'Agent', 'Admin', 'Buyer'), updateVisitStatus);
 
 // Offers
 router.route('/offers')

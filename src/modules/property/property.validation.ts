@@ -22,6 +22,11 @@ const contactSchema = Joi.object({
   phone: Joi.string().required(),
 });
 
+const imageSchema = Joi.object({
+  original: Joi.string().uri().required(),
+  thumbnail: Joi.string().uri().required(),
+});
+
 export const createProperty = Joi.object({
   title: Joi.string().min(5).max(100).required(),
   description: Joi.string().min(10).required(),
@@ -29,8 +34,8 @@ export const createProperty = Joi.object({
   location: locationSchema.required(),
   features: featuresSchema.required(),
   amenities: Joi.array().items(Joi.string()).optional(),
-  images: Joi.array().items(Joi.string().uri()).optional(),
-  documents: Joi.array().items(Joi.string().uri()).optional(),
+  images: Joi.array().items(imageSchema).min(1).required(),
+  documents: Joi.array().items(Joi.string().uri()).min(1).required(),
   contactDetails: contactSchema.optional(),
   status: Joi.string().valid('Draft', 'Pending Approval', 'Approved', 'Published', 'Sold', 'Rented', 'Available', 'Pending').default('Pending Approval'),
   propertyType: Joi.string().valid('Villa', 'Apartment', 'Penthouse', 'Commercial', 'Townhouse', 'Land').required(),
@@ -43,7 +48,7 @@ export const updateProperty = Joi.object({
   location: locationSchema,
   features: featuresSchema,
   amenities: Joi.array().items(Joi.string()),
-  images: Joi.array().items(Joi.string().uri()),
+  images: Joi.array().items(imageSchema),
   documents: Joi.array().items(Joi.string().uri()),
   contactDetails: contactSchema,
   status: Joi.string().valid('Draft', 'Pending Approval', 'Approved', 'Published', 'Sold', 'Rented', 'Available', 'Pending'),
